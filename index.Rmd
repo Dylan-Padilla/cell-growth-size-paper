@@ -14,7 +14,7 @@ output:
 </br></br>
 
 
-<font size="5">Larger cells grow faster only at high temperatures</font>
+<font size="5">Larger prokaryotes grow faster only at high temperatures</font>
 </p>
 
 </p></p>
@@ -755,6 +755,39 @@ legend(x = 0.6, y = -0.1, legend = paste("n = ", length(tmp.upper.dat.growth$spe
 ```
 
 
+
+</br></br></br>
+
+<b>
+<font size="3">Model diagnosis</font>
+</b>
+
+</br></br></br>
+
+
+
+
+```{r}
+
+model6.3 <- lm(d1_up ~ log10(tmp.op), data = tmp.upper.dat)
+summary(model6.3)
+
+
+layout(matrix(c(1, 1, 2, 2,
+                1, 1, 2, 2,
+                3, 3, 4, 4,
+                3, 3, 4, 4), nrow = 4, ncol = 4, byrow = TRUE))
+
+
+par(las = 1)
+plot(model6.3)
+
+
+
+
+```
+
+
 </br></br></br>
 
 <b>
@@ -838,6 +871,39 @@ mtext("B", side = 2, at = 2.35, line = 2.9, las = 1, font = 2)
 
 
 ```
+
+
+</br></br></br>
+
+<b>
+<font size="3">Model diagnosis</font>
+</b>
+
+</br></br></br>
+
+
+
+
+```{r}
+
+mod.fg1 <- lm(log10(doubling_h) ~ d1_up, data = tmp.op.dat.growth)
+summary(mod.fg1)
+
+layout(matrix(c(1, 1, 2, 2,
+                1, 1, 2, 2,
+                3, 3, 4, 4,
+                3, 3, 4, 4), nrow = 4, ncol = 4, byrow = TRUE))
+
+
+par(las = 1)
+plot(mod.fg1)
+
+
+
+
+```
+
+
 
 </br></br></br>
 
@@ -1034,6 +1100,49 @@ legend(x = 1.7, y = 2.18, legend = "tRNA genes", lty = 2, lwd = 2, bty = "n")
 ```
 
 
+
+</br></br></br>
+
+<b>
+<font size="3">Model diagnosis</font>
+</b>
+
+</br></br></br>
+
+
+```{r}
+
+mod.gr1 <- lm(log10(rRNA) ~ log10(doubling_h), data = tran3)
+summary(mod.gr1)
+
+
+layout(matrix(c(1, 1, 2, 2,
+                1, 1, 2, 2,
+                3, 3, 4, 4,
+                3, 3, 4, 4), nrow = 4, ncol = 4, byrow = TRUE))
+
+
+par(las = 1)
+plot(mod.gr1)
+
+
+mod.gr2 <- lm(log10(tRNA) ~ log10(doubling_h), data = tran3)
+summary(mod.gr2)
+
+layout(matrix(c(1, 1, 2, 2,
+                1, 1, 2, 2,
+                3, 3, 4, 4,
+                3, 3, 4, 4), nrow = 4, ncol = 4, byrow = TRUE))
+
+
+par(las = 1)
+plot(mod.gr2)
+
+
+```
+
+
+
 </br></br></br>
 
 <b>
@@ -1147,6 +1256,50 @@ mtext("B", side = 2, at = 6, line = 3, las = 1, font = 2)
 #dev.off()
 
 ```
+
+
+</br></br></br>
+
+<b>
+<font size="3">Model diagnosis</font>
+</b>
+
+</br></br></br>
+
+
+```{r}
+
+
+
+size <- lm(d1_up ~ kingdom, data = d1_up)
+summary(size)
+
+layout(matrix(c(1, 1, 2, 2,
+                1, 1, 2, 2,
+                3, 3, 4, 4,
+                3, 3, 4, 4), nrow = 4, ncol = 4, byrow = TRUE))
+
+
+par(las = 1)
+plot(size)
+
+
+growth <- lm(doubling_h ~ kingdom, data = doubling)
+summary(growth)
+
+layout(matrix(c(1, 1, 2, 2,
+                1, 1, 2, 2,
+                3, 3, 4, 4,
+                3, 3, 4, 4), nrow = 4, ncol = 4, byrow = TRUE))
+
+
+par(las = 1)
+plot(growth)
+
+
+```
+
+
 
 </br></br></br>
 
