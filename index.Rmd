@@ -11,14 +11,14 @@ output:
 
 <font size="6"> Data analysis for: </font>
 
-</br></br>
+</br>[Dylan Padilla](https://dylanpadilla.netlify.app/), School of Life Sciences, Arizona State University, Tempe, AZ 85287, USA.</br>
 
 
-<font size="5">Larger prokaryotes grow faster only at high temperatures</font>
+<font size="5">Prokaryotes Become Larger at High Temperatures but They Do Not Grow Faster</font>
 </p>
 
 </p></p>
-[Dylan Padilla](https://dylanpadilla.netlify.app/), School of Life Sciences, Arizona State University, Tempe, AZ 85287, USA.
+
 </p></p>
 
 
@@ -39,11 +39,13 @@ knitr::opts_chunk$set(comment = ">", fig.width = 7, fig.height = 7, dpi = 300)
 
 ```{r}
 
+library(AICcmodavg)
 library(ape)
 library(geiger)
 library(phytools)
 library(phylolm)
 library(lattice)
+library(MuMIn)
 library(nlme)
 library(raster)
 library(rphylopic)
@@ -127,7 +129,7 @@ names(cell.vol) <- c("species", "volume")
 
 obj <- rep()
 for(i in cell.vol$species){
-    kingdom <- data$superkingdom[data$species == i][1]
+    kingdom <- unique(data$superkingdom[data$species == i])[1]
     obj <- c(obj, kingdom)
 }
 
@@ -155,6 +157,8 @@ tree.vol <- drop.tip(vol.tree, rm_phy)
 
 vol.dat <- subset(v.dat, subset = v.dat$species %in% tree.vol$tip, select = names(v.dat))
 name.check(tree.vol, vol.dat)
+
+vol.dat$r <- log(2)/vol.dat$doubling_h
 str(vol.dat)
 
 ```
@@ -227,7 +231,7 @@ add_phylopic_base(img = img, x = 7400, y = 17, ysize = 1, color = "black", fill 
 
 uuid <- get_uuid(name = "Fimbriimonas ginsengisoli", n = 1)
 img <- get_phylopic(uuid = uuid)
-add_phylopic_base(img = img, x = 7400, y = 11, ysize = 1, color = "green", fill = "orange")
+add_phylopic_base(img = img, x = 7400, y = 11.5, ysize = 1, color = alpha("black", 0.1), fill = "orange")
 
 
 
@@ -494,7 +498,7 @@ tmp.lower.dat <- tmp.lower.dat[tmp.lower.dat$d1_up < 4, ] ## Removing potential 
 
 
 model6.1 <- lm(d1_up ~ log10(tmp.op), data = tmp.lower.dat)
-
+##summary(model6.1)
 
 ## IC
 
@@ -513,7 +517,7 @@ lower.i <- (coef(model6.1)[1] + coef(model6.1)[2]*x) + ic.i
 
 par(mar = c(6.4, 4, 2, 0), mgp = c(2.8, 1, 0))
     
-plot(d1_up ~ log10(tmp.op), data = tmp.lower.dat, ylab = expression(paste("Cell diameter ", log[10], sep = " ")(mu*m)), xlab = expression(paste("Lower temperature \u00B0C")~(log[10])), las = 1, pch = 21, cex = 1.2, type = "n")
+plot(d1_up ~ log10(tmp.op), data = tmp.lower.dat, ylab = expression(paste("Cell diameter ", log[10], sep = " ")(mu*m)), xlab = expression(paste("Lower temperature")~log[10]~("\u00B0C")), las = 1, pch = 21, cex = 1.2, type = "n")
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
@@ -540,7 +544,7 @@ tmp.op.dat <- tmp.op.dat[tmp.op.dat$d1_up < 4, ] ## Removing potential outliers
 
 #model6 <- lm(d1_up ~ log10(tmp.op), data = tmp.dat)
 model6 <- lm(d1_up ~ log10(tmp.op), data = tmp.op.dat)
-
+#summary(model6)
 
 ## IC
 
@@ -560,7 +564,7 @@ lower.i <- (coef(model6)[1] + coef(model6)[2]*x) + ic.i
 
 par(mar = c(6.4, 2.3, 2, 0.1))
 
-plot(d1_up ~ log10(tmp.op), data = tmp.op.dat, ylab = " ",  xlab = expression(paste("Optimum temperature \u00B0C")~(log[10])), las = 1, pch = 21, cex = 1.2, type = "n")
+plot(d1_up ~ log10(tmp.op), data = tmp.op.dat, ylab = " ",  xlab = expression(paste("Optimum temperature")~log[10]~("\u00B0C")), las = 1, pch = 21, cex = 1.2, type = "n")
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
@@ -587,6 +591,11 @@ tmp.upper.dat <- tmp.upper.dat[tmp.upper.dat$d1_up < 4, ] ## Removing potential 
 
 
 model6.3 <- lm(d1_up ~ log10(tmp.op), data = tmp.upper.dat)
+#summary(model6.3)
+
+## Model selection procedure based on AIC criterion
+
+AICc(model6.1, model6, model6.3)
 
 
 ## IC
@@ -607,7 +616,7 @@ lower.i <- (coef(model6.3)[1] + coef(model6.3)[2]*x) + ic.i
 
 par(mar = c(6.4, 2.3, 2, 0.2))
 
-plot(d1_up ~ log10(tmp.op), data = tmp.upper.dat, ylab = " ", xlab = expression(paste("Upper temperature \u00B0C")~(log[10])), las = 1, pch = 21, cex = 1.2, type = "n")
+plot(d1_up ~ log10(tmp.op), data = tmp.upper.dat, ylab = " ", xlab = expression(paste("Upper temperature")~log[10]~("\u00B0C")), las = 1, pch = 21, cex = 1.2, type = "n")
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
@@ -622,6 +631,8 @@ polygon(c(rev(x), x), c(rev(lower.i), upper.i), border = FALSE, col = alpha("gol
 
 legend("topleft", legend = levels(as.factor((tmp.upper.dat$kingdom))), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 0.8)
 legend(x = 0.6, y = 3, legend = paste("n = ", length(tmp.upper.dat$species)), bty = "n", cex = 0.8)
+legend(x = 0.6, y = 2.85, legend = expression(p==0.002), bty = "n", cex = 0.8)
+legend(x = 0.6, y = 2.7, legend = expression(R^2==0.02), bty = "n", cex = 0.8)
 
 
 
@@ -630,14 +641,15 @@ legend(x = 0.6, y = 3, legend = paste("n = ", length(tmp.upper.dat$species)), bt
 
 ## lower
 
+tmp.lower.dat.growth$r <- log(2)/tmp.lower.dat.growth$doubling_h
 
-model7.1 <- lm(log10(doubling_h) ~ log10(tmp.op), data = tmp.lower.dat.growth)
+model7.1 <- lm(log10(r) ~ log10(tmp.op), data = tmp.lower.dat.growth)
 
 ## IC
 
 SSX <- sum(round((log10(tmp.lower.dat.growth$tmp.op) - mean(log10(tmp.lower.dat.growth$tmp.op)))^2), 2)
-s2 <- var(log10(tmp.lower.dat.growth$doubling_h))
-n <- length(log10(tmp.lower.dat.growth$doubling_h))
+s2 <- var(log10(tmp.lower.dat.growth$r))
+n <- length(log10(tmp.lower.dat.growth$r))
 x <- seq(min(log10(tmp.lower.dat.growth$tmp.op)), max(log10(tmp.lower.dat.growth$tmp.op)), length = 30)
 m.x <- mean(round(log10(tmp.lower.dat.growth$tmp.op), 1))
 se <- sqrt(s2*((1/n) + (((x - m.x)^2)/SSX)))
@@ -648,9 +660,9 @@ ic.i <- se*ii
 upper.i <- (coef(model7.1)[1] + coef(model7.1)[2]*x) + ic.s
 lower.i <- (coef(model7.1)[1] + coef(model7.1)[2]*x) + ic.i
 
-par(mar = c(6.4, 4, 2, 0), mgp = c(2.8, 1, 0))
+par(mar = c(6.4, 4, 2, 0), mgp = c(2.7, 1, 0))
 
-plot(log10(doubling_h) ~ log10(tmp.op), data = tmp.lower.dat.growth, ylab = expression(paste("Doubling ", log[10], sep = " ")(h)), xlab = expression(paste("Lower temperature \u00B0C ")~(log[10])), las = 1, pch = 21, bg = alpha("black", 0.3), cex = 1.2, type = "n")
+plot(log10(r) ~ log10(tmp.op), data = tmp.lower.dat.growth, ylab = expression(paste('Intrinsic growth rate')~italic(r)~log[10]~(h^-1)), xlab = expression(paste("Lower temperature")~log[10]~("\u00B0C")), las = 1, pch = 21, bg = alpha("black", 0.3), cex = 1.2, type = "n")
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
@@ -658,28 +670,34 @@ par(new = TRUE)
 
 cols3 <- c("purple", "orange")[as.numeric(as.factor(tmp.lower.dat.growth$kingdom))]
 
-plot(log10(doubling_h) ~ log10(tmp.op), data = tmp.lower.dat.growth, xlab = "", ylab = "", las = 1, pch = 21, col = cols3, bg = cols3, cex = 0.8, axes = FALSE)
+plot(log10(r) ~ log10(tmp.op), data = tmp.lower.dat.growth, xlab = "", ylab = "", las = 1, pch = 21, col = cols3, bg = cols3, cex = 0.8, axes = FALSE)
 
 lines(x = x, y = (coef(model7.1)[1] + coef(model7.1)[2]*x), lty = 2, lwd = 2, col = "black")
 polygon(c(rev(x), x), c(rev(lower.i), upper.i), border = FALSE, col = alpha("gold", 0.3))
 
-legend("bottomleft", legend = levels(as.factor((tmp.lower.dat.growth$kingdom))), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 0.8)
+legend("bottomright", legend = levels(as.factor((tmp.lower.dat.growth$kingdom))), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 0.8)
 
-mtext("B", side = 2, line = 2.6, at = 3, las = 1, font = 2)
-legend("topright", legend = paste("n = ", length(tmp.lower.dat.growth$species)), bty = "n", cex = 0.8)
+mtext("B", side = 2, line = 2.6, at = 0.7, las = 1, font = 2)
+legend(x = 1.13, y = 0.35, legend = paste("n = ", length(tmp.lower.dat.growth$species)), bty = "n", cex = 0.8)
+legend(x = 1.13, y = 0.2, legend = expression(p<0.001), bty = "n", cex = 0.8)
+legend(x = 1.13, y = 0.07, legend = expression(R^2==0.42), bty = "n", cex = 0.8)
 
 
 ## Doubling and optimum temp
 
 #model7 <- gls(log(doubling_h) ~ log(tmp.op), correlation = corBrownian(phy = tree.tmp2, form = ~species), data = tmp.dat2, method = "ML")
 
-model7 <- lm(log10(doubling_h) ~ log10(tmp.op), data = tmp.op.dat.growth)
+tmp.op.dat.growth$r <- log(2)/tmp.op.dat.growth$doubling_h
+
+model7 <- lm(log10(r) ~ log10(tmp.op), data = tmp.op.dat.growth)
+#summary(model7)
+
 
 ## IC
 
 SSX <- sum(round((log10(tmp.op.dat.growth$tmp.op) - mean(log10(tmp.op.dat.growth$tmp.op)))^2), 2)
-s2 <- var(log10(tmp.op.dat.growth$doubling_h))
-n <- length(log10(tmp.op.dat.growth$doubling_h))
+s2 <- var(log10(tmp.op.dat.growth$r))
+n <- length(log10(tmp.op.dat.growth$r))
 x <- seq(min(log10(tmp.op.dat.growth$tmp.op)), max(log10(tmp.op.dat.growth$tmp.op)), length = 30)
 m.x <- mean(round(log10(tmp.op.dat.growth$tmp.op), 1))
 se <- sqrt(s2*((1/n) + (((x - m.x)^2)/SSX)))
@@ -693,7 +711,7 @@ lower.i <- (coef(model7)[1] + coef(model7)[2]*x) + ic.i
 
 par(mar = c(6.4, 2.3, 2, 0.1))
 
-plot(log10(doubling_h) ~ log10(tmp.op), data = tmp.op.dat.growth, ylab = expression(paste("Doubling ", log[10], sep = " ")(h)), xlab = expression(paste("Optimum temperature \u00B0C ")~(log[10])), las = 1, pch = 21, bg = alpha("black", 0.3), cex = 1.2, type = "n")
+plot(log10(r) ~ log10(tmp.op), data = tmp.op.dat.growth, ylab = expression(paste("Intrinsic growth rate")~r~log[10]~(h^-1)), xlab = expression(paste("Optimum temperature")~log[10]~("\u00B0C")), las = 1, pch = 21, bg = alpha("black", 0.3), cex = 1.2, type = "n")
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
@@ -701,25 +719,28 @@ par(new = TRUE)
 
 cols3 <- c("purple", "orange")[as.numeric(as.factor(tmp.op.dat.growth$kingdom))]
 
-plot(log10(doubling_h) ~ log10(tmp.op), data = tmp.op.dat.growth, xlab = "", ylab = "", las = 1, pch = 21, col = cols3, bg = cols3, cex = 0.8, axes = FALSE)
+plot(log10(r) ~ log10(tmp.op), data = tmp.op.dat.growth, xlab = "", ylab = "", las = 1, pch = 21, col = cols3, bg = cols3, cex = 0.8, axes = FALSE)
 
 lines(x = x, y = (coef(model7)[1] + coef(model7)[2]*x), lty = 2, lwd = 2, col = "black")
 polygon(c(rev(x), x), c(rev(lower.i), upper.i), border = FALSE, col = alpha("gold", 0.3))
 
-legend("bottomleft", legend = levels(as.factor((tmp.op.dat.growth$kingdom))), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 0.8)
-legend(x = 0.92, y = 0.12, legend = paste("n = ", length(tmp.op.dat.growth$species)), bty = "n", cex = 0.8)
+legend("topleft", legend = levels(as.factor((tmp.op.dat.growth$kingdom))), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 0.8)
+legend(x = 0.92, y = -0.01, legend = paste("n = ", length(tmp.op.dat.growth$species)), bty = "n", cex = 0.8)
+legend(x = 0.92, y = -0.12, legend = expression(p==0.02), bty = "n", cex = 0.8)
+legend(x = 0.92, y = -0.21, legend = expression(R^2==0.21), bty = "n", cex = 0.8)
 
 
 ## upper
 
+tmp.upper.dat.growth$r <- log(2)/tmp.upper.dat.growth$doubling_h
 
-model7.2 <- lm(log10(doubling_h) ~ log10(tmp.op), data = tmp.upper.dat.growth)
+model7.2 <- lm(log10(r) ~ log10(tmp.op), data = tmp.upper.dat.growth)
 
 ## IC
 
 SSX <- sum(round((log10(tmp.upper.dat.growth$tmp.op) - mean(log10(tmp.upper.dat.growth$tmp.op)))^2), 2)
-s2 <- var(log10(tmp.upper.dat.growth$doubling_h))
-n <- length(log10(tmp.upper.dat.growth$doubling_h))
+s2 <- var(log10(tmp.upper.dat.growth$r))
+n <- length(log10(tmp.upper.dat.growth$r))
 x <- seq(min(log10(tmp.upper.dat.growth$tmp.op)), max(log10(tmp.upper.dat.growth$tmp.op)), length = 30)
 m.x <- mean(round(log10(tmp.upper.dat.growth$tmp.op), 1))
 se <- sqrt(s2*((1/n) + (((x - m.x)^2)/SSX)))
@@ -732,7 +753,7 @@ lower.i <- (coef(model7.2)[1] + coef(model7.2)[2]*x) + ic.i
 
 par(mar = c(6.4, 2.3, 2, 0.2))
 
-plot(log10(doubling_h) ~ log10(tmp.op), data = tmp.upper.dat.growth, ylab = expression(paste("Doubling ", log[10], sep = " ")(h)), xlab = expression(paste("Upper temperature \u00B0C ")~(log[10])), las = 1, pch = 21, bg = alpha("black", 0.3), cex = 1.2, type = "n")
+plot(log10(r) ~ log10(tmp.op), data = tmp.upper.dat.growth, ylab = expression(paste("Intrinsic growth rate")~r~log[10]~(h^-1)), xlab = expression(paste("Upper temperature")~log[10]~("\u00B0C")), las = 1, pch = 21, bg = alpha("black", 0.3), cex = 1.2, type = "n")
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
@@ -740,17 +761,25 @@ par(new = TRUE)
 
 cols3 <- c("purple", "orange")[as.numeric(as.factor(tmp.upper.dat.growth$kingdom))]
 
-plot(log10(doubling_h) ~ log10(tmp.op), data = tmp.upper.dat.growth, xlab = "", ylab = "", las = 1, pch = 21, col = cols3, bg = cols3, cex = 0.8, axes = FALSE)
+plot(log10(r) ~ log10(tmp.op), data = tmp.upper.dat.growth, xlab = "", ylab = "", las = 1, pch = 21, col = cols3, bg = cols3, cex = 0.8, axes = FALSE)
 
 lines(x = x, y = (coef(model7.2)[1] + coef(model7.2)[2]*x), lty = 2, lwd = 2, col = "black")
 polygon(c(rev(x), x), c(rev(lower.i), upper.i), border = FALSE, col = alpha("gold", 0.3))
 
-legend("bottomleft", legend = levels(as.factor((tmp.upper.dat.growth$kingdom))), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 0.8)
-legend(x = 0.6, y = -0.1, legend = paste("n = ", length(tmp.upper.dat.growth$species)), bty = "n", cex = 0.8)
+legend("topleft", legend = levels(as.factor((tmp.upper.dat.growth$kingdom))), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 0.8)
+legend(x = 0.6, y = 0.16, legend = paste("n = ", length(tmp.upper.dat.growth$species)), bty = "n", cex = 0.8)
+legend(x = 0.6, y = 0.05, legend = expression(p<0.001), bty = "n", cex = 0.8)
+legend(x = 0.6, y = -0.04, legend = expression(R^2==0.22), bty = "n", cex = 0.8)
 
 #dev.off()
 
 
+
+## int.mod <- lm(log10(r) ~ log10(tmp.op)*d1_up, data = tmp.op.dat.growth) ## This is the model that describes the interaction in question
+## summary(int.mod)
+
+##AICc(model6, model6.1, model6.3, model7, model7.1, int.mod)
+##anova(model7, int.mod)
 
 ```
 
@@ -800,12 +829,18 @@ plot(model6.3)
 ```{r}
 
 
-mod <- lm(log10(doubling_h) ~ log10(volume), data = v.dat)
+v.dat$r <- log(2)/v.dat$doubling_h
+
+mod <- lm(log10(r) ~ log10(volume), data = v.dat)
 #summary(mod)
 
-pg.mod <- gls(log10(doubling_h) ~ log10(volume), correlation = corBrownian(phy = tree.vol, form = ~species), data = vol.dat, method = "ML")
+pg.mod <- gls(log10(r) ~ log10(volume), correlation = corBrownian(phy = tree.vol, form = ~species), data = vol.dat, method = "ML")
 #summary(pg.mod)
 
+AICc(mod, pg.mod)
+
+
+#png("figure2.png", height = 7, width = 7, units = "in", res = 360)
 
 layout(matrix(c(0, 0, 0, 0,
                 1, 1, 2, 2,
@@ -815,8 +850,8 @@ layout(matrix(c(0, 0, 0, 0,
 ## IC
 
 SSX <- sum(round((log10(vol.dat$volume) - mean(log10(vol.dat$volume)))^2), 2)
-s2 <- var(log10(vol.dat$doubling_h))
-n <- length(vol.dat$doubling_h)
+s2 <- var(log10(vol.dat$r))
+n <- length(vol.dat$r)
 x <- seq(min(log10(vol.dat$volume)), max(log10(vol.dat$volume)), length = length(vol.dat$species))
 m.x <- mean(round(log(vol.dat$volume), 1))
 se <- sqrt(s2*((1/n) + (((x - m.x)^2)/SSX)))
@@ -828,34 +863,48 @@ upper.i <- (coef(pg.mod)[1] + coef(pg.mod)[2]*x) + ic.s
 lower.i <- (coef(pg.mod)[1] + coef(pg.mod)[2]*x) + ic.i
 
 
+par(mgp = c(2.5, 1, 0))
 
 cols <- setNames(c("purple", "orange"), levels(as.factor(vol.dat$kingdom)))
 vol.dat$kingdom <- as.factor(vol.dat$kingdom)
 
-plot(log10(doubling_h) ~ log10(volume), data = vol.dat, type = "n", pch = 21, las = 1, ylab = expression(paste("Doubling ", log[10], sep = " ")*(h)), xlab = expression(paste("Cell volume ", log[10], sep = " ")(mu*m^3)))
+plot(log10(r) ~ log10(volume), data = vol.dat, type = "n", pch = 21, las = 1, ylab = expression(paste('Intrinsic growth rate')~italic(r)~log[10]~(h^-1)), xlab = expression(paste("Cell volume ", log[10], sep = " ")(mu*m^3)))
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
 par(new = TRUE)
 
-plot(log10(doubling_h) ~ log10(volume), data = vol.dat, type = "p", pch = 21, col = cols[vol.dat$kingdom], bg = cols[vol.dat$kingdom], las = 1, ylab = "", xlab = "", axes = FALSE)
+plot(log10(r) ~ log10(volume), data = vol.dat, type = "p", pch = 21, col = cols[vol.dat$kingdom], bg = cols[vol.dat$kingdom], las = 1, ylab = "", xlab = "", axes = FALSE)
 
 lines(x, y = (coef(pg.mod)[1] + coef(pg.mod)[2]*x), lwd = 2)
 polygon(c(rev(x), x), c(rev(lower.i), upper.i), border = FALSE, col = alpha("gold", 0.3))
 
 
-legend("bottomleft", legend = unique(vol.dat$kingdom), pch = 16, col = cols, bg = cols, bty = "n")
-legend(x = -2.6, y = 0, legend = paste(" = ", round(as.data.frame(summary(pg.mod)$tTable)[2, 1], 3)), bty = "n")
-legend(x = -2.7, y = 0, legend = expression(beta), bty = "n")
-legend(x = -2.7, y = -0.13, legend = paste("p = ", round(as.data.frame(summary(pg.mod)$tTable)[2, 4], 3)), bty = "n")
-mtext("A", side = 2, at = 1.6, line = 2.5, las = 1, font = 2)
+legend("topleft", legend = unique(vol.dat$kingdom), pch = 16, col = cols, bg = cols, bty = "n")
+legend(x = -2.7, y = 0, legend = paste('n = ', length(vol.dat$r), sep = ''), bty = "n")
+legend(x = -2.7, y = -0.13, legend = expression(p<0.001), bty = 'n')
+mtext("A", side = 2, at = 0.7, line = 1, las = 1, font = 2)
 
 
 ## Doubling and optimum temp
 
-mod.fg1 <- lm(log10(doubling_h) ~ d1_up, data = tmp.op.dat.growth)
+mod.fg1 <- lm(log10(r) ~ d1_up, data = tmp.op.dat.growth)
+#summary(mod.fg1)
 
-plot(log10(doubling_h) ~ d1_up, data = tmp.op.dat.growth, ylab = expression(paste("Doubling ", log[10], sep = " ")(h)), xlab = expression(paste("Cell diameter")~log[10]~(mu*m)), las = 1, pch = 21, bg = alpha("black", 0.3), cex = 1.2, type = "n")
+check <- name.check(tree, tmp.op.dat.growth)
+rm_phy <- check$tree_not_data
+rm_dat <- check$data_not_tree
+pg2.tree <- drop.tip(tree, rm_phy)
+
+pg.mod2 <- gls(log10(r) ~ d1_up, correlation = corBrownian(phy = pg2.tree , form = ~species), data = tmp.op.dat.growth, method = "ML")
+summary(pg.mod2)
+
+AICc(mod.fg1, pg.mod2)
+
+#xtable(summary(mod.fg1)$coefficients, digits = 3)
+
+par(mgp = c(2.5, 1, 0))
+plot(log10(r) ~ d1_up, data = tmp.op.dat.growth, ylab = expression(paste("Intrinsic growth rate")~italic(r)~log[10]~(h^-1)), xlab = expression(paste("Cell diameter")~log[10]~(mu*m)), las = 1, pch = 21, bg = alpha("black", 0.3), cex = 1.2, type = "n")
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
@@ -863,12 +912,13 @@ par(new = TRUE)
 
 cols3 <- c("purple", "orange")[as.numeric(as.factor(tmp.op.dat.growth$kingdom))]
 
-plot(log10(doubling_h) ~ d1_up, data = tmp.op.dat.growth, xlab = "", ylab = "", las = 1, pch = 21, col = cols3, bg = cols3, cex = 1, axes = FALSE)
+plot(log10(r) ~ d1_up, data = tmp.op.dat.growth, xlab = "", ylab = "", las = 1, pch = 21, col = cols3, bg = cols3, cex = 1, axes = FALSE)
 
-legend("bottomleft", legend = levels(as.factor((tmp.op.dat.growth$kingdom))), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 1)
+legend("topleft", legend = levels(as.factor((tmp.op.dat.growth$kingdom))), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 1)
 
-mtext("B", side = 2, at = 2.35, line = 2.9, las = 1, font = 2)
+mtext("B", side = 2, at = 0.48, line = 1, las = 1, font = 2)
 
+#dev.off()
 
 ```
 
@@ -1009,6 +1059,7 @@ tran3$kingdom <- obj
 tran3$species <- gsub("[[:punct:]]", "", tran3$species)
 tran3$species <- gsub(" ", "_", tran3$species)
 rownames(tran3) <- tran3$species
+tran3$r <- log(2)/tran3$doubling_h
 #head(tran3)
 
 check <- name.check(tree, tran3)
@@ -1019,24 +1070,35 @@ tree.tran3 <- drop.tip(tree, rm_phy)
 tran.dat3 <- subset(tran3, subset = tran3$species %in% tree.tran3$tip, select = names(tran3))
 ##str(tran.dat3)
 
-mod.gr1 <- lm(log10(rRNA) ~ log10(doubling_h), data = tran3)
+mod.gr1 <- lm(log10(rRNA) ~ log10(r), data = tran3)
 #summary(mod.gr1)
 
-mod.gr2 <- lm(log10(tRNA) ~ log10(doubling_h), data = tran3)
+mod.gr2 <- lm(log10(tRNA) ~ log10(r), data = tran3)
 #summary(mod.gr2)
 
+int.mod <- lm(log10(tRNA) ~ log10(r)*log10(rRNA), data = tran3)
+#summary(int.mod)
+
+int.mod2 <- lm(log10(rRNA) ~ log10(r)*log10(tRNA), data = tran3)
+#summary(int.mod2)
+
+
+anova(mod.gr2, int.mod)
+AICc(mod.gr2, int.mod, int.mod2)
+
+#xtable(summary(int.mod)$coefficients, digits = 3)
 
 ## GROWTH
 
 
-#png("figure2.png", height = 7, width = 7, units = "in", res = 360)
+#png("figure3.png", height = 7, width = 7, units = "in", res = 360)
 
 
-SSX <- sum(round((log10(tran3$doubling_h) - mean(log10(tran3$doubling_h)))^2), 2)
+SSX <- sum(round((log10(tran3$r) - mean(log10(tran3$r)))^2), 2)
 s2 <- var(log10(tran3$rRNA))
 n <- length(tran3$rRNA)
-x <- seq(min(log10(tran3$doubling_h)), max(log10(tran3$doubling_h)), length = length(tran3$species))
-m.x <- mean(round(log(tran3$doubling_h), 1))
+x <- seq(min(log10(tran3$r)), max(log10(tran3$r)), length = length(tran3$species))
+m.x <- mean(round(log(tran3$r), 1))
 se <- sqrt(s2*((1/n) + (((x - m.x)^2)/SSX)))
 is <- qt(0.975, df = n - 2)
 ii <- qt(0.025, df = n - 2)
@@ -1046,27 +1108,27 @@ upper.i <- (coef(mod.gr1)[1] + coef(mod.gr1)[2]*x) + ic.s
 lower.i <- (coef(mod.gr1)[1] + coef(mod.gr1)[2]*x) + ic.i
 
 
+
 cols2 <- setNames(c("purple", "orange"), levels(as.factor(tran3$kingdom)))
 
-par(mar = c(5, 4, 1.5, 3.3))
+par(mar = c(5, 4, 1.5, 3.3), mgp = c(2.7, 1, 0))
 
-plot(log10(rRNA) ~ log10(doubling_h), data = tran3, type = "n", pch = 16, las = 1, ylab = expression(log[10]~rRNA~genes), xlab = expression(paste("Doubling ", log[10], sep = " ")(h)))
+plot(log10(rRNA) ~ log10(r), data = tran3, type = "n", pch = 16, las = 1, ylab = expression(log[10]~rRNA~genes), xlab = expression(paste("Intrinsic growth rate")~italic(r)~log[10]~(h^-1)))
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
 par(new = TRUE)
 
-plot(log10(rRNA) ~ log10(doubling_h), data = tran3, type = "p", pch = 16, col = cols2[tran3$kingdom], bg = cols2[tran3$kingdom], las = 1, axes = FALSE, xaxt = "n", ylab = "", xlab = "")
+plot(log10(rRNA) ~ log10(r), data = tran3, type = "p", pch = 16, col = cols2[tran3$kingdom], bg = cols2[tran3$kingdom], las = 1, axes = FALSE, xaxt = "n", ylab = "", xlab = "")
 
 lines(x = x, y = (coef(mod.gr1)[1] + coef(mod.gr1)[2]*x), lwd = 2)
 polygon(c(rev(x), x), c(rev(lower.i), upper.i), border = FALSE, col = alpha("gold", 0.3))
 
-
-SSX <- sum(round((log10(tran3$doubling_h) - mean(log10(tran3$doubling_h)))^2), 2)
+SSX <- sum(round((log10(tran3$r) - mean(log10(tran3$r)))^2), 2)
 s2 <- var(log10(tran3$tRNA))
 n <- length(tran3$tRNA)
-x <- seq(min(log10(tran3$doubling_h)), max(log10(tran3$doubling_h)), length = length(tran3$species))
-m.x <- mean(round(log(tran3$doubling_h), 1))
+x <- seq(min(log10(tran3$r)), max(log10(tran3$r)), length = length(tran3$species))
+m.x <- mean(round(log(tran3$rRNA), 1))
 se <- sqrt(s2*((1/n) + (((x - m.x)^2)/SSX)))
 is <- qt(0.975, df = n - 2)
 ii <- qt(0.025, df = n - 2)
@@ -1083,7 +1145,7 @@ cols2 <- setNames(c("purple", "orange"), levels(as.factor(tran3$kingdom)))
 
 par(new = TRUE)
 
-plot(log10(tRNA) ~ log10(doubling_h), data = tran3, type = "p", pch = 8, col = cols2[tran3$kingdom], bg = cols2[tran3$kingdom], las = 1, axes = FALSE, xaxt = "n", ylab = "", xlab = "")
+plot(log10(tRNA) ~ log10(r), data = tran3, type = "p", pch = 1, col = cols2[tran3$kingdom], bg = cols2[tran3$kingdom], las = 1, axes = FALSE, xaxt = "n", ylab = "", xlab = "")
 
 lines(x = x, y = (coef(mod.gr2)[1] + coef(mod.gr2)[2]*x), lwd = 2, lty = 2)
 polygon(c(rev(x), x), c(rev(lower.i), upper.i), border = FALSE, col = alpha("gold", 0.3))
@@ -1091,8 +1153,13 @@ polygon(c(rev(x), x), c(rev(lower.i), upper.i), border = FALSE, col = alpha("gol
 axis(side = 4, at = pretty(range(log10(tran3$tRNA))), las = 1)
 mtext(expression(log[10]~tRNA~genes), side = 4, line = 2.3)
 
-legend("topright", legend = c("Archaea", "Bacteria"), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 1)
-legend(x = 1.7, y = 2.18, legend = "tRNA genes", lty = 2, lwd = 2, bty = "n")
+legend("topleft", legend = c("Archaea", "Bacteria"), pch = 16, col = c("purple", "orange"), bg = c("purple", "orange"), bty = "n", cex = 1)
+legend(x = -2.9, y = 2.19, legend = "tRNA genes", lty = 2, lwd = 2, bty = "n")
+legend(x = -2.94, y = 2.259, legend = c(" ", " "), pch = 1, col = c("purple", "orange"), bty = "n", cex = 1)
+#legend(x = -3, y = 2.15, legend = expression(p==0.04), bty = "n")
+#legend(x = -3, y = 2.12, legend = expression(R^2==0.17), bty = "n")
+
+
 
 #dev.off()
 
@@ -1112,9 +1179,6 @@ legend(x = 1.7, y = 2.18, legend = "tRNA genes", lty = 2, lwd = 2, bty = "n")
 
 ```{r}
 
-mod.gr1 <- lm(log10(rRNA) ~ log10(doubling_h), data = tran3)
-summary(mod.gr1)
-
 
 layout(matrix(c(1, 1, 2, 2,
                 1, 1, 2, 2,
@@ -1123,21 +1187,7 @@ layout(matrix(c(1, 1, 2, 2,
 
 
 par(las = 1)
-plot(mod.gr1)
-
-
-mod.gr2 <- lm(log10(tRNA) ~ log10(doubling_h), data = tran3)
-summary(mod.gr2)
-
-layout(matrix(c(1, 1, 2, 2,
-                1, 1, 2, 2,
-                3, 3, 4, 4,
-                3, 3, 4, 4), nrow = 4, ncol = 4, byrow = TRUE))
-
-
-par(las = 1)
-plot(mod.gr2)
-
+plot(int.mod)
 
 ```
 
@@ -1187,10 +1237,11 @@ head(doubling)
 doubling$species <- gsub("[[:punct:]]", "", doubling$species)
 doubling$species <- gsub(" ", "_", doubling$species)
 rownames(doubling) <- doubling$species
+doubling$r <- log(2)/doubling$doubling_h
 dim(doubling)
 head(doubling)
 
-growth <- lm(doubling_h ~ kingdom, data = doubling)
+growth <- lm(log10(r) ~ kingdom, data = doubling)
 summary(growth)
 
 ##png("figure5.png", height = 7, width = 7, units = "in", res = 360)
@@ -1202,28 +1253,32 @@ layout(matrix(c(0, 0, 0, 0,
 
 ## Basic boxplot
 
-vioplot(log10(doubling_h) ~ kingdom, data = doubling, border = NA, method = "jitter", side = "right", ylab = expression(paste("Doubling")~log[10]~(h)), xlab = "Kingdom", col = "white", las = 1)
+par(mgp = c(2.5, 1, 0))
+
+vioplot(log10(r) ~ kingdom, data = doubling, border = NA, method = "jitter", side = "right", ylab = expression(paste("Intrinsic growth rate")~italic(r)~log[10]~(h^-1)), xlab = "Kingdom", col = "white", las = 1)
 
 grid(nx = NULL, ny = NULL, col = alpha("lightgray", 0.5), lwd = 1, lty = 2)
 
 par(new = TRUE)
 
-vioplot(log10(doubling_h) ~ kingdom, data = doubling, border = NA, method = "jitter", side = "right", ylab = "", xlab = "", col = c(alpha("purple", 0.2), alpha("orange", 0.2)), las = 1)
+vioplot(log10(r) ~ kingdom, data = doubling, border = NA, method = "jitter", side = "right", ylab = "", xlab = "", col = c(alpha("purple", 0.2), alpha("orange", 0.2)), las = 1)
 
-segments(x0 = 1, y0 = mean(log10(doubling$doubling_h)[doubling$kingdom == "Archaea"]), x1 = 1.4, y1 = mean(log10(doubling$doubling_h)[doubling$kingdom == "Archaea"]), lwd = 2, lty = 2, col = "black")
-text(x = 1.45, y = mean(log10(doubling$doubling_h)[doubling$kingdom == "Archaea"]), expression(mu))
+segments(x0 = 1, y0 = mean(log10(doubling$r)[doubling$kingdom == "Archaea"]), x1 = 1.4, y1 = mean(log10(doubling$r)[doubling$kingdom == "Archaea"]), lwd = 2, lty = 2, col = "black")
+text(x = 1.45, y = mean(log10(doubling$r)[doubling$kingdom == "Archaea"]), expression(mu))
 
-segments(x0 = 2, y0 = mean(log10(doubling$doubling_h)[doubling$kingdom == "Bacteria"]), x1 = 2.39, y1 = mean(log10(doubling$doubling_h)[doubling$kingdom == "Bacteria"]), lwd = 2, lty = 2, col = "black")
-text(x = 2.45, y = mean(log10(doubling$doubling_h)[doubling$kingdom == "Bacteria"]), expression(mu))
+segments(x0 = 2, y0 = mean(log10(doubling$r)[doubling$kingdom == "Bacteria"]), x1 = 2.39, y1 = mean(log10(doubling$r)[doubling$kingdom == "Bacteria"]), lwd = 2, lty = 2, col = "black")
+text(x = 2.45, y = mean(log10(doubling$r)[doubling$kingdom == "Bacteria"]), expression(mu))
 
-text(x = 0.65, y = 2.5, paste("n =", length(doubling$species), sep = " "), cex = 1.1)
+legend(x = 0.3, y = 0.8, paste("n =", length(doubling$species), sep = " "), cex = 0.9, bty = 'n')
+legend(x = 0.3, y = 0.6, paste("p < 0.001"), cex = 0.9, bty = 'n')
+legend(x = 0.3, y = 0.4, expression(R^2==0.019), cex = 0.9, bty = 'n')
 
 #mean(doubling$doubling[doubling$kingdom == "Archaea"])
 #mean(doubling$doubling[doubling$kingdom == "Bacteria"])
 
-stripchart(log10(doubling_h) ~ kingdom, vertical = TRUE, data = doubling, method = "jitter", add = TRUE, pch = 20, col = c(alpha("purple", 0.3), alpha("orange", 0.5)), cex = 1.3)
+stripchart(log10(r) ~ kingdom, vertical = TRUE, data = doubling, method = "jitter", add = TRUE, pch = 20, col = c(alpha("purple", 0.3), alpha("orange", 0.5)), cex = 1.3)
 
-mtext("A", side = 2, at = 3, line = 3, las = 1, font = 2)
+mtext("A", side = 2, at = 1, line = 2.8, las = 1, font = 2)
 
 
 ## Basic boxplot
@@ -1242,7 +1297,9 @@ text(x = 1.4, y = mean(d1_up$d1_up[d1_up$kingdom == "Archaea"]), expression(mu))
 segments(x0 = 2, y0 = mean(d1_up$d1_up[d1_up$kingdom == "Bacteria"]), x1 = 2.4, y1 = mean(d1_up$d1_up[d1_up$kingdom == "Bacteria"]), lwd = 2, lty = 2, col = "black")
 text(x = 2.45, y = mean(d1_up$d1_up[d1_up$kingdom == "Bacteria"]), expression(mu))
 
-text(x = 0.65, y = 5.3, paste("n =", length(d1_up$species), sep = " "), cex = 1.1)
+text(x = 0.65, y = 5.3, paste("n =", length(d1_up$species), sep = " "), cex = 0.9)
+text(x = 0.65, y = 4.97, paste('p < 0.001'), cex = 0.9)
+text(x = 0.68, y = 4.68, expression(R^2==0.043), cex = 0.9)
 
 #mean(d1_up$d1_up[d1_up$kingdom == "Archaea"])
 #mean(d1_up$d1_up[d1_up$kingdom == "Bacteria"])
